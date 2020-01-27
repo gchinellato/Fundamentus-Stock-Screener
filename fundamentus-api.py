@@ -152,6 +152,6 @@ if __name__ == '__main__':
        'Max 52 sem', 'Valor de mercado', 'Valor da firma',
        'Últ balanço processado']]
 
-	#out = out[~out['Papel'].str.contains('|'.join(FINANCIAL_STOCKS))]	
+	out = out[~out['Papel'].str.contains('|'.join(FINANCIAL_STOCKS))]	
 
 	out.to_json('fundamentus.json', orient='index')
