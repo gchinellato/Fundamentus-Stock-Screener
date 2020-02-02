@@ -10,6 +10,7 @@ import pandas as pd
 MARKET_CAP = 200000000.00
 VOLUME = 200000.00
 
+# http://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/acoes/consultas/classificacao-setorial/
 FINANCIAL_STOCKS = [
 					'ABCB','RPAD','BRIV','BAZA','BPAN','BGIP','BEES','BOAC','BPAR','BRSR','BBDC','BBAS','BSLI','BPAC','CTGP','GSGI','IDVL','BIDI','ITSA','ITUB','JPMC','BMEB','BMIN','BNBR','PRBC','BPAT','PINE','SANB','UBSG','USBC','WFCO', #bancos
 					'CRIV','FNCN','MERC', #Soc. Crédito e Financiamento
@@ -35,18 +36,14 @@ def get_screening():
 		soup = BeautifulSoup(response, 'html.parser')
 		table = soup.find('table', id="resultado")
 		df = pd.read_html(str(table), decimal=',', thousands='.')[0]
-		#with open('fundamentus.html', 'w') as fo:
-		#	fo.write(df.to_html())
-		#df = pd.read_html('fundamentus.html')[0].drop('Unnamed: 0',1)
 
 		cols = ['Div.Yield', 'Mrg Ebit', 'Mrg. Líq.', 'ROIC', 'ROE', 'Cresc. Rec.5a']
 
 		for col in cols:
 			df[col] = df[col].str.replace('%', '').str.replace('.','').str.replace(',','.').astype(float) / 100.0
 
-		# Filter
-		df = df[(df['Liq.2meses'] >= VOLUME) & (df['Mrg Ebit'] > 0.0)]
-		return df
+		# Filter: Volume
+		return df[(df['Liq.2meses'] >= VOLUME) & (df['Mrg Ebit'] > 0.0)]
 	except (ConnectionError, Timeout, TooManyRedirects) as e:
 		print(e)
 		return None
@@ -145,13 +142,23 @@ if __name__ == '__main__':
 	# Filter: Market Cap
 	out = out[out['Valor de mercado'] >= MARKET_CAP]
 
-	out = out[['Papel', 'Empresa', 'Setor', 'Subsetor', 'Tipo', 'Cotação_x', 'Data últ cot',
-	   'P/L', 'P/VP', 'Div.Yield',  'EV/EBIT', 'EV/EBITDA',
-       'Mrg Ebit', 'Mrg. Líq.', 'Liq. Corr.', 'ROIC', 'ROE', 'Liq.2meses',
-       'Patrim. Líq', 'Dív.Brut/ Patrim.', 'Cresc. Rec.5a', 'Min 52 sem',
-       'Max 52 sem', 'Valor de mercado', 'Valor da firma',
-       'Últ balanço processado']]
+	out = out[['Papel', 'Empresa', 'Setor', 'Subsetor', 'Tipo', 'Cotação_x',
+	   'P/L', 'P/VP', 'Div.Yield', 'EV/EBIT', 'EV/EBITDA',
+       'Mrg Ebit', 'Mrg. Líq.', 'ROIC', 'ROE', 'Liq.2meses',
+       'Dív.Brut/ Patrim.', 'Valor de mercado',
+       'Data últ cot', 'Últ balanço processado']]
 
+	# Removing Financial Stocks based on B3 categorization
 	out = out[~out['Papel'].str.contains('|'.join(FINANCIAL_STOCKS))]	
+
+	# Keep stock with higher volume, in case of duplicated ticker (i.e.: PETR4, PETR3)
+	out['pre_ticker'] = out['Papel'].str[:4]
+	out.sort_values(by=['pre_ticker', 'Liq.2meses'], ascending=[True, False], inplace=True)
+	out.drop_duplicates(subset=['pre_ticker'], keep='first', inplace=True)
+	out.drop('pre_ticker', axis=1, inplace=True)
+
+	# Acquirer's Multiple Ranking
+	out.sort_values(by=['EV/EBIT'], ascending=[True], inplace=True)
+	out.reset_index(inplace=True)
 
 	out.to_json('fundamentus.json', orient='index')
