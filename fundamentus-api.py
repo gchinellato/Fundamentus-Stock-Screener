@@ -7,8 +7,8 @@ import urllib.request
 import pandas as pd
 
 # Filter
-MARKET_CAP = 200000000
-LIQUIDITY = 200000
+MARKET_CAP = 200000000.00
+VOLUME = 200000.00
 
 FINANCIAL_STOCKS = [
 					'ABCB','RPAD','BRIV','BAZA','BPAN','BGIP','BEES','BOAC','BPAR','BRSR','BBDC','BBAS','BSLI','BPAC','CTGP','GSGI','IDVL','BIDI','ITSA','ITUB','JPMC','BMEB','BMIN','BNBR','PRBC','BPAT','PINE','SANB','UBSG','USBC','WFCO', #bancos
@@ -45,7 +45,7 @@ def get_screening():
 			df[col] = df[col].str.replace('%', '').str.replace('.','').str.replace(',','.').astype(float) / 100.0
 
 		# Filter
-		df = df[(df['Liq.2meses'] >= LIQUIDITY) & (df['Mrg Ebit'] > 0)]
+		df = df[(df['Liq.2meses'] >= VOLUME) & (df['Mrg Ebit'] > 0.0)]
 		return df
 	except (ConnectionError, Timeout, TooManyRedirects) as e:
 		print(e)
@@ -143,7 +143,7 @@ if __name__ == '__main__':
 	out = pd.merge(df, stocks_info, how ='outer', on ='Papel') 
 
 	# Filter: Market Cap
-	out = out[out['Valor da firma'] >= MARKET_CAP]
+	out = out[out['Valor de mercado'] >= MARKET_CAP]
 
 	out = out[['Papel', 'Empresa', 'Setor', 'Subsetor', 'Tipo', 'Cotação_x', 'Data últ cot',
 	   'P/L', 'P/VP', 'Div.Yield',  'EV/EBIT', 'EV/EBITDA',
