@@ -172,5 +172,11 @@ if __name__ == '__main__':
 	out.sort_values(by=['MF'], ascending=[True], inplace=True)
 	out.reset_index(drop=True, inplace=True)
 
+	# Output
+	out.sort_values(by=['Acquirer'], ascending=[True], inplace=True)
+	out.reset_index(drop=True, inplace=True)
+
 	out.to_json('fundamentus.json', orient='index')
 	out.to_excel('fundamentus.xlsx')
+	out[['Papel', 'Empresa', 'Setor', 'Acquirer', 'MF']].to_csv('fundamentus-summary.csv')
+
