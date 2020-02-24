@@ -138,6 +138,7 @@ if __name__ == '__main__':
 		stocks_info = stocks_info.append(get_stock_info(row[1]['Papel']), ignore_index=True)
 
 	out = pd.merge(df, stocks_info, how ='outer', on ='Papel') 
+	#out.to_csv('full-list.csv')
 
 	# Filter: Market Cap
 	out = out[out['Valor de mercado'] >= MARKET_CAP]
@@ -159,6 +160,17 @@ if __name__ == '__main__':
 
 	# Acquirer's Multiple Ranking
 	out.sort_values(by=['EV/EBIT'], ascending=[True], inplace=True)
-	out.reset_index(inplace=True)
+	out.reset_index(drop=True, inplace=True)
+	out['Acquirer'] = out.index
+
+	# Magic Formula Ranking
+	out.sort_values(by=['ROIC'], ascending=[False], inplace=True)
+	out.reset_index(drop=True, inplace=True)		
+	out['MF-ROIC'] = out.index
+
+	out['MF'] = out['Acquirer'] + out['MF-ROIC']
+	out.sort_values(by=['MF'], ascending=[True], inplace=True)
+	out.reset_index(drop=True, inplace=True)
 
 	out.to_json('fundamentus.json', orient='index')
+	out.to_excel('fundamentus.xlsx')
